@@ -48,6 +48,18 @@ export default async function PortalPage({ searchParams }: Props) {
           ...r,
           dueDate: r.dueDate.toISOString(),
         })),
+        subscription: tenant.subscription
+          ? {
+              id: tenant.subscription.id,
+              plan: tenant.subscription.plan,
+              status: tenant.subscription.status,
+              amountCents: tenant.subscription.amountCents,
+              currency: tenant.subscription.currency,
+              currentPeriodEnd: tenant.subscription.currentPeriodEnd
+                ? tenant.subscription.currentPeriodEnd.toISOString()
+                : null,
+            }
+          : null,
       }}
       tenants={tenants}
       upcoming={upcoming}

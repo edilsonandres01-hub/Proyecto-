@@ -13,7 +13,14 @@ function nextDueDate(dayOfMonth: number): Date {
   return due;
 }
 
+function periodEnd(daysFromNow: number): Date {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  return d;
+}
+
 async function main() {
+  await prisma.subscription.deleteMany();
   await prisma.taxReminder.deleteMany();
   await prisma.invoice.deleteMany();
   await prisma.payment.deleteMany();
@@ -39,10 +46,19 @@ async function main() {
       },
       products: {
         create: [
-          { sku: 'SAB-045', name: 'Sabritas Original 45g', priceCents: 1800, stockQty: 48, currency: 'MXN' },
+          { sku: 'SAB-045', name: 'Sabritas Original 45g', priceCents: 1800, stockQty: 4, currency: 'MXN' },
           { sku: 'COCA-600', name: 'Coca-Cola 600ml', priceCents: 2200, stockQty: 36, currency: 'MXN' },
           { sku: 'TOR-14', name: 'Tornillo 1/4', priceCents: 300, stockQty: 200, currency: 'MXN' },
         ],
+      },
+      subscription: {
+        create: {
+          plan: 'starter',
+          status: 'trialing',
+          amountCents: 29900,
+          currency: 'MXN',
+          currentPeriodEnd: periodEnd(14),
+        },
       },
     },
   });
@@ -63,9 +79,18 @@ async function main() {
       },
       products: {
         create: [
-          { sku: 'COCA-2L', name: 'Coca-Cola 2L', priceCents: 950, stockQty: 20, currency: 'BRL' },
+          { sku: 'COCA-2L', name: 'Coca-Cola 2L', priceCents: 950, stockQty: 3, currency: 'BRL' },
           { sku: 'ARROZ-1K', name: 'Arroz Tipo 1 1kg', priceCents: 780, stockQty: 40, currency: 'BRL' },
         ],
+      },
+      subscription: {
+        create: {
+          plan: 'growth',
+          status: 'active',
+          amountCents: 79900,
+          currency: 'BRL',
+          currentPeriodEnd: periodEnd(30),
+        },
       },
     },
   });

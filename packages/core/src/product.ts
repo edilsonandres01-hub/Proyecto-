@@ -102,3 +102,31 @@ export function money(amountCents: number, currency: CurrencyCode): Money {
   assertMoney(value);
   return value;
 }
+
+/** Minimal stock shape — supports core `stock` and DB/agent `stockQty`. */
+export type StockAware = {
+  stock?: number;
+  stockQty?: number;
+};
+
+/**
+ * Returns products whose available quantity is at or below `threshold` (default 5).
+ * Prefers `stockQty` when present, otherwise uses `stock`.
+ */
+export function findLowStock<T extends StockAware>(
+  products: readonly T[],
+  threshold = 5,
+): T[] {
+  if (!Number.isFinite(threshold)) {
+    throw new Error('threshold must be a finite number');
+  }
+  return products.filter((p) => {
+    const qty =
+      typeof p.stockQty === 'number'
+        ? p.stockQty
+        : typeof p.stock === 'number'
+          ? p.stock
+          : 0;
+    return qty <= threshold;
+  });
+}

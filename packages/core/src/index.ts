@@ -15,8 +15,14 @@ export type {
 
 export { asTenantId } from './types.js';
 
-export type { CreateProductInput, AdjustStockOptions } from './product.js';
-export { createProduct, adjustStock, assertMoney, money } from './product.js';
+export type { CreateProductInput, AdjustStockOptions, StockAware } from './product.js';
+export {
+  createProduct,
+  adjustStock,
+  assertMoney,
+  money,
+  findLowStock,
+} from './product.js';
 
 export type { CreateOrderItemInput, CreateOrderInput } from './order.js';
 export { createOrder, confirmOrder, cancelOrder } from './order.js';

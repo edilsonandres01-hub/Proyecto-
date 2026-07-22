@@ -8,6 +8,7 @@ import {
   confirmOrder,
   createOrder,
   createProduct,
+  findLowStock,
   formatMoney,
   getUpcomingObligations,
   money,
@@ -56,6 +57,32 @@ describe('adjustStock', () => {
 
     const next = adjustStock(product, -5);
     assert.equal(next.stock, -3);
+  });
+});
+
+describe('findLowStock', () => {
+  it('filters by stockQty with default threshold 5', () => {
+    const products = [
+      { id: 'a', stockQty: 2 },
+      { id: 'b', stockQty: 5 },
+      { id: 'c', stockQty: 6 },
+    ];
+    const low = findLowStock(products);
+    assert.deepEqual(
+      low.map((p) => p.id),
+      ['a', 'b'],
+    );
+  });
+
+  it('supports core Product.stock and custom threshold', () => {
+    const tenantId = asTenantId('tenant-1');
+    const products = [
+      createProduct({ tenantId, name: 'Low', stock: 1, price: money(100, 'MXN') }),
+      createProduct({ tenantId, name: 'Ok', stock: 10, price: money(100, 'MXN') }),
+    ];
+    const low = findLowStock(products, 3);
+    assert.equal(low.length, 1);
+    assert.equal(low[0]!.name, 'Low');
   });
 });
 

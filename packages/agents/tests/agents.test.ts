@@ -16,6 +16,14 @@ const ctx = {
       currency: 'MXN',
       stockQty: 10,
     },
+    {
+      id: 'p2',
+      sku: 'SAB-045',
+      name: 'Sabritas Original 45g',
+      priceCents: 1800,
+      currency: 'MXN',
+      stockQty: 3,
+    },
   ],
 };
 
@@ -55,5 +63,20 @@ describe('agents orchestrator', () => {
   it('creates payment tool when order exists', () => {
     const r = handleTurn('cobrar con SPEI', ctx, { lastOrderId: 'ord_1' });
     assert.equal(r.tool.name, 'create_payment');
+  });
+
+  it('lists low stock with list_low_stock tool', () => {
+    const r = handleTurn('stock bajo', ctx);
+    assert.equal(r.agent, 'product');
+    assert.equal(r.tool.name, 'list_low_stock');
+    assert.match(r.reply, /Sabritas/);
+    assert.doesNotMatch(r.reply, /Coca-Cola 600ml/);
+  });
+
+  it('matches low stock phrases in pt/en', () => {
+    const brCtx = { ...ctx, country: 'BR' as const, locale: 'pt-BR' as const };
+    assert.equal(handleTurn('estoque baixo', brCtx).tool.name, 'list_low_stock');
+    assert.equal(handleTurn('low stock', ctx).tool.name, 'list_low_stock');
+    assert.equal(handleTurn('bajo inventario', ctx).tool.name, 'list_low_stock');
   });
 });

@@ -8,18 +8,33 @@ datasource db {
 }
 
 model Tenant {
-  id           String        @id @default(cuid())
+  id           String         @id @default(cuid())
   name         String
-  country      String        @default("MX")
+  country      String         @default("MX")
   taxId        String?
   phone        String?
-  createdAt    DateTime      @default(now())
+  createdAt    DateTime       @default(now())
   users        User[]
   products     Product[]
   orders       Order[]
   payments     Payment[]
   invoices     Invoice[]
   taxReminders TaxReminder[]
+  subscription Subscription?
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  tenantId         String    @unique
+  plan             String
+  status           String
+  amountCents      Int
+  currency         String
+  currentPeriodEnd DateTime?
+  createdAt        DateTime  @default(now())
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
 
 model TaxReminder {

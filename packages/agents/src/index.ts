@@ -1,4 +1,9 @@
-import { classifyIntent, getUpcomingObligations, type Intent } from '@pymebot/core';
+import {
+  classifyIntent,
+  findLowStock,
+  getUpcomingObligations,
+  type Intent,
+} from '@pymebot/core';
 
 export type AgentName = 'product' | 'payment' | 'fiscal' | 'support';
 
@@ -27,6 +32,7 @@ export type OrchestratorContext = {
 export type ToolCall =
   | { name: 'search_products'; query: string }
   | { name: 'get_stock'; productId: string }
+  | { name: 'list_low_stock'; threshold: number }
   | { name: 'create_draft_order'; productId: string; quantity: number }
   | { name: 'create_payment'; orderId: string; rail: 'spei' | 'codi' | 'pix' | 'cash' }
   | { name: 'issue_invoice'; orderId: string }
@@ -95,6 +101,9 @@ export function handleTurn(
 
   const wantsTaxReminders = /(recordatorio|obligaciones|impuestos|DAS|IVA)/i.test(userText);
 
+  const wantsLowStock =
+    /(stock bajo|bajo inventario|estoque baixo|low stock)/i.test(userText);
+
   // Priority overrides for compound phrases
   if (wantsTaxReminders) {
     intent = 'fiscal';
@@ -102,6 +111,8 @@ export function handleTurn(
     intent = 'fiscal';
   } else if (/(cobrar|cobro|pagar|pix|spei|codi)/i.test(lower)) {
     intent = 'payment';
+  } else if (wantsLowStock) {
+    intent = 'product';
   } else if (matchedProduct && (intent === 'unknown' || intent === 'support')) {
     intent = 'product';
   } else if (/(stock|inventario|estoque|cu[aá]nto|quanto|lista)/i.test(lower) && intent === 'unknown') {
@@ -197,6 +208,28 @@ export function handleTurn(
   // product agent
   const product = matchedProduct;
   const wantsOrder = /(vend|pedido|apart|compr|quero|quiero|lleva)/i.test(lower);
+
+  if (wantsLowStock) {
+    const threshold = 5;
+    const low = findLowStock(ctx.products, threshold);
+    const lines =
+      low.length === 0
+        ? lang === 'pt'
+          ? 'Nenhum produto com estoque baixo.'
+          : 'No hay productos con stock bajo.'
+        : low
+            .map((p) => `• ${p.name} (${p.sku}): ${p.stockQty}`)
+            .join('\n');
+    return {
+      agent: 'product',
+      intent,
+      reply:
+        lang === 'pt'
+          ? `Alerta de estoque baixo (≤${threshold}):\n${lines}`
+          : `Alerta de stock bajo (≤${threshold}):\n${lines}`,
+      tool: { name: 'list_low_stock', threshold },
+    };
+  }
 
   if (product && wantsOrder) {
     const qty = extractQuantity(userText);

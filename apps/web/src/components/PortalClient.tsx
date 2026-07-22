@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState, useTransition } from 'react';
+import { ImportCsvForm } from '@/components/ImportCsvForm';
 
 type Product = {
   id: string;
@@ -28,6 +29,14 @@ type Payment = { id: string; rail: string; status: string; amountCents: number; 
 type Invoice = { id: string; country: string; status: string; uuidOrChave: string | null };
 type Reminder = { id: string; title: string; dueDate: string; regime: string | null; status: string };
 type TenantOption = { id: string; name: string; country: string };
+type Subscription = {
+  id: string;
+  plan: string;
+  status: string;
+  amountCents: number;
+  currency: string;
+  currentPeriodEnd: string | null;
+} | null;
 
 type Props = {
   tenant: {
@@ -39,6 +48,7 @@ type Props = {
     payments: Payment[];
     invoices: Invoice[];
     taxReminders: Reminder[];
+    subscription: Subscription;
   };
   tenants: TenantOption[];
   upcoming: { code: string; title: string; dueDate: string; daysUntil: number }[];
@@ -62,9 +72,30 @@ export function PortalClient({ tenant, tenants, upcoming }: Props) {
 
   const isBR = tenant.country === 'BR';
   const defaultRail = isBR ? 'pix' : 'spei';
+  const sub = tenant.subscription;
 
   function refresh() {
     startTransition(() => router.refresh());
+  }
+
+  async function billingAction(action: 'subscribe' | 'cancel', plan?: 'starter' | 'growth') {
+    setMsg(null);
+    const res = await fetch('/api/billing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantId: tenant.id, action, plan }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMsg(data.error || 'Error de billing');
+      return;
+    }
+    setMsg(
+      action === 'cancel'
+        ? 'Suscripción cancelada'
+        : `Plan ${data.subscription?.plan} activo`,
+    );
+    refresh();
   }
 
   async function createProduct(e: FormEvent) {
@@ -146,6 +177,21 @@ export function PortalClient({ tenant, tenants, upcoming }: Props) {
       body: JSON.stringify({ tenantId: tenant.id, orderId, action: 'cancel' }),
     });
     setMsg('Pedido cancelado y stock restaurado');
+    refresh();
+  }
+
+  async function confirmPayment(paymentId: string) {
+    const res = await fetch('/api/payments/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantId: tenant.id, paymentId }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMsg(data.error || 'No se pudo confirmar el pago');
+      return;
+    }
+    setMsg(`Pago confirmado (${data.payment?.status})`);
     refresh();
   }
 
@@ -246,6 +292,14 @@ export function PortalClient({ tenant, tenants, upcoming }: Props) {
               </button>
             </div>
           </form>
+
+          <ImportCsvForm
+            tenantId={tenant.id}
+            onDone={(message) => {
+              setMsg(message);
+              refresh();
+            }}
+          />
 
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
@@ -377,11 +431,22 @@ export function PortalClient({ tenant, tenants, upcoming }: Props) {
             <ul className="mt-4 space-y-3 text-sm">
               {tenant.payments.length === 0 && <li className="text-[var(--moss)]">Sin pagos aún.</li>}
               {tenant.payments.map((p) => (
-                <li key={p.id} className="flex justify-between gap-3 border-t border-[var(--line)] pt-3">
+                <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-3">
                   <span>
                     {p.rail.toUpperCase()} · {p.status}
                   </span>
-                  <span>{money(p.amountCents, p.currency)}</span>
+                  <div className="flex items-center gap-2">
+                    <span>{money(p.amountCents, p.currency)}</span>
+                    {p.status !== 'paid' && (
+                      <button
+                        type="button"
+                        className="rounded-full border border-[var(--line)] px-3 py-1 text-xs"
+                        onClick={() => confirmPayment(p.id)}
+                      >
+                        Confirmar
+                      </button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -400,6 +465,62 @@ export function PortalClient({ tenant, tenants, upcoming }: Props) {
                 </li>
               ))}
             </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">Billing (sandbox)</h2>
+          <p className="mt-2 text-xs text-[var(--moss)]">
+            Simulación de suscripción. No se cobra nada real.
+          </p>
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+            <div className="text-sm">
+              <p>
+                Plan:{' '}
+                <span className="font-semibold uppercase tracking-wide">
+                  {sub?.plan ?? 'ninguno'}
+                </span>
+              </p>
+              <p className="mt-1 text-[var(--moss)]">
+                Status: {sub?.status ?? '—'}
+                {sub?.amountCents != null && (
+                  <>
+                    {' '}
+                    · {money(sub.amountCents, sub.currency)}
+                  </>
+                )}
+              </p>
+              {sub?.currentPeriodEnd && (
+                <p className="mt-1 text-[var(--moss)]">
+                  Periodo hasta{' '}
+                  {new Date(sub.currentPeriodEnd).toLocaleDateString(isBR ? 'pt-BR' : 'es-MX')}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="rounded-full bg-[var(--ink)] px-4 py-2 text-xs text-[var(--lime)]"
+                onClick={() => billingAction('subscribe', 'starter')}
+              >
+                Subscribe Starter
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-[var(--line)] px-4 py-2 text-xs"
+                onClick={() => billingAction('subscribe', 'growth')}
+              >
+                Subscribe Growth
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-[var(--coral)]/40 px-4 py-2 text-xs text-[var(--coral)]"
+                onClick={() => billingAction('cancel')}
+                disabled={!sub || sub.status === 'canceled'}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </section>
 

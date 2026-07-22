@@ -17,6 +17,7 @@ const tenantInclude = {
   payments: { orderBy: { createdAt: 'desc' as const }, take: 20 },
   invoices: { orderBy: { createdAt: 'desc' as const }, take: 20 },
   taxReminders: { orderBy: { dueDate: 'asc' as const }, take: 10 },
+  subscription: true,
 };
 
 export async function getTenantById(tenantId: string) {

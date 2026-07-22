@@ -93,6 +93,36 @@ export default function ApiDocsPage() {
   -d '{"tenantId":"${DEMO_TENANT}","orderId":"ORD_ID"}' \\
   "http://localhost:3000/api/v1/invoices"`}
           />
+
+          <Endpoint
+            title="Webhook de pago (PSP mock)"
+            method="POST"
+            path="/api/webhooks/payments"
+            curl={`curl -s -X POST \\
+  -H "Content-Type: application/json" \\
+  -d '{"intentId":"INTENT_ID","status":"paid","secret":"pymebot_webhook_secret"}' \\
+  "http://localhost:3000/api/webhooks/payments"`}
+          />
+
+          <Endpoint
+            title="Confirmar pago (portal)"
+            method="POST"
+            path="/api/payments/confirm"
+            curl={`curl -s -X POST \\
+  -H "Content-Type: application/json" \\
+  -d '{"tenantId":"${DEMO_TENANT}","paymentId":"PAY_ID"}' \\
+  "http://localhost:3000/api/payments/confirm"`}
+          />
+
+          <Endpoint
+            title="Importar inventario CSV"
+            method="POST"
+            path="/api/products/import"
+            curl={`curl -s -X POST \\
+  -H "Content-Type: application/json" \\
+  -d '{"tenantId":"${DEMO_TENANT}","csv":"sku,name,price,stock\\nACE-001,Aceite 1L,45.00,20"}' \\
+  "http://localhost:3000/api/products/import"`}
+          />
         </section>
 
         <p className="mt-14 text-sm text-[var(--moss)]">
