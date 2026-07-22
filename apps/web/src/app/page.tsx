@@ -22,6 +22,9 @@ export default function HomePage() {
           PyMEBot
         </Link>
         <nav className="flex items-center gap-3 text-sm font-medium">
+          <Link href="/docs" className="btn-ghost hidden sm:inline-flex">
+            API
+          </Link>
           <Link href="/portal" className="btn-ghost hidden sm:inline-flex">
             Portal
           </Link>

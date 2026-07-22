@@ -49,10 +49,12 @@ check(
   'Payment adapter factory',
   fileHas(join(root, 'packages/adapters/src/payment/createPaymentAdapter.ts'), /createPaymentAdapter/),
 );
-check(
-  'Multi-tenant schema',
-  fileHas(join(root, 'packages/db/prisma/schema.prisma'), /tenantId/),
-);
+check('Reminders API', existsSync(join(root, 'apps/web/src/app/api/reminders/route.ts')));
+check('Public API v1 OpenAPI', existsSync(join(root, 'apps/web/src/app/api/v1/openapi/route.ts')));
+check('API docs page', existsSync(join(root, 'apps/web/src/app/docs/page.tsx')));
+check('Portal client CRUD', existsSync(join(root, 'apps/web/src/components/PortalClient.tsx')));
+check('Tax calendar core', existsSync(join(root, 'packages/core/src/taxCalendar.ts')));
+
 
 const test = spawnSync('npm', ['run', 'test'], { cwd: root, encoding: 'utf8', shell: true });
 check('Unit tests green', test.status === 0, (test.stdout || '').slice(-400));

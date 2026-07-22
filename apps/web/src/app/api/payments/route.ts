@@ -39,9 +39,18 @@ export async function POST(req: NextRequest) {
       amountCents: order.totalCents,
       currency: order.currency,
       intentId: intent.intentId,
-      instructions: intent.instructions,
+      instructions: intent.instructions as object,
     },
   });
 
-  return NextResponse.json({ payment, intent }, { status: 201 });
+  const paid = await adapter.confirmWebhook({ intentId: intent.intentId });
+  const updated = await prisma.payment.update({
+    where: { id: payment.id },
+    data: { status: paid.status },
+  });
+  if (paid.status === 'paid') {
+    await prisma.order.update({ where: { id: orderId }, data: { status: 'paid' } });
+  }
+
+  return NextResponse.json({ payment: updated, intent }, { status: 201 });
 }

@@ -44,3 +44,13 @@ export async function PATCH(req: NextRequest) {
   });
   return NextResponse.json(product);
 }
+
+export async function DELETE(req: NextRequest) {
+  const tenantId = req.nextUrl.searchParams.get('tenantId') || 'tenant_demo_mx';
+  const id = req.nextUrl.searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'id_required' }, { status: 400 });
+  const existing = await prisma.product.findFirst({ where: { id, tenantId } });
+  if (!existing) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  await prisma.product.delete({ where: { id } });
+  return NextResponse.json({ ok: true, id });
+}
