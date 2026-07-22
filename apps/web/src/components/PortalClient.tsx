@@ -110,11 +110,29 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [webhookEvents, setWebhookEvents] = useState<WebhookEventRow[]>([]);
   const [acceptCode, setAcceptCode] = useState('');
+  const [productQuery, setProductQuery] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState<
+    'all' | 'confirmed' | 'paid' | 'invoiced' | 'cancelled'
+  >('all');
 
   const isBR = tenant.country === 'BR';
   const defaultRail = isBR ? 'pix' : 'spei';
   const sub = tenant.subscription;
   const currency = isBR ? 'BRL' : 'MXN';
+
+  const productFilter = productQuery.trim().toLowerCase();
+  const filteredProducts = productFilter
+    ? tenant.products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(productFilter) ||
+          p.sku.toLowerCase().includes(productFilter),
+      )
+    : tenant.products;
+
+  const filteredOrders =
+    orderStatusFilter === 'all'
+      ? tenant.orders
+      : tenant.orders.filter((o) => o.status === orderStatusFilter);
 
   function refresh() {
     startTransition(() => router.refresh());
