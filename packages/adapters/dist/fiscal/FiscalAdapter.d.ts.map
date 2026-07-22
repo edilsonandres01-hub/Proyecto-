@@ -1,0 +1,1 @@
+{"version":3,"file":"FiscalAdapter.d.ts","sourceRoot":"","sources":["../../src/fiscal/FiscalAdapter.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EACV,mBAAmB,EACnB,iBAAiB,EACjB,kBAAkB,EACnB,MAAM,aAAa,CAAC;AAErB,MAAM,WAAW,aAAa;IAC5B,YAAY,CAAC,KAAK,EAAE,iBAAiB,GAAG,OAAO,CAAC,kBAAkB,CAAC,CAAC;IACpE,aAAa,CAAC,SAAS,EAAE,MAAM,GAAG,OAAO,CAAC,mBAAmB,CAAC,CAAC;CAChE"}

@@ -1,0 +1,29 @@
+{
+  "name": "@pymebot/adapters",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "PyMEBot payment and fiscal mock adapters (SPEI, CoDi, Pix, CFDI, NF-e)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

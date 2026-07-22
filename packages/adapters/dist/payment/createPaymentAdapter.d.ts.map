@@ -1,0 +1,1 @@
+{"version":3,"file":"createPaymentAdapter.d.ts","sourceRoot":"","sources":["../../src/payment/createPaymentAdapter.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,WAAW,EAAE,MAAM,aAAa,CAAC;AAC/C,OAAO,KAAK,EAAE,cAAc,EAAE,MAAM,qBAAqB,CAAC;AAK1D,wBAAgB,oBAAoB,CAAC,IAAI,EAAE,WAAW,GAAG,cAAc,CAatE"}
