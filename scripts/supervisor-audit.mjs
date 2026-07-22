@@ -54,6 +54,16 @@ check('Public API v1 OpenAPI', existsSync(join(root, 'apps/web/src/app/api/v1/op
 check('API docs page', existsSync(join(root, 'apps/web/src/app/docs/page.tsx')));
 check('Portal client CRUD', existsSync(join(root, 'apps/web/src/components/PortalClient.tsx')));
 check('Tax calendar core', existsSync(join(root, 'packages/core/src/taxCalendar.ts')));
+check('Payment webhooks', existsSync(join(root, 'apps/web/src/app/api/webhooks/payments/route.ts')));
+check('CSV import API', existsSync(join(root, 'apps/web/src/app/api/products/import/route.ts')));
+check('Billing API', existsSync(join(root, 'apps/web/src/app/api/billing/route.ts')));
+check('Low-stock alerts API', existsSync(join(root, 'apps/web/src/app/api/alerts/low-stock/route.ts')));
+check('Analytics API', existsSync(join(root, 'apps/web/src/app/api/analytics/route.ts')));
+check('Referrals API', existsSync(join(root, 'apps/web/src/app/api/referrals/route.ts')));
+check('Onboarding page', existsSync(join(root, 'apps/web/src/app/onboarding/page.tsx')));
+check('Accountant portal', existsSync(join(root, 'apps/web/src/app/accountant/page.tsx')));
+check('Feature flags API', existsSync(join(root, 'apps/web/src/app/api/flags/route.ts')));
+check('Lead authorization log', existsSync(join(root, 'docs/LEAD-AUTHORIZATION-LOG.md')));
 
 
 const test = spawnSync('npm', ['run', 'test'], { cwd: root, encoding: 'utf8', shell: true });

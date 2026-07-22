@@ -25,11 +25,17 @@ Abre:
 - Landing: http://localhost:3000
 - Portal merchant: http://localhost:3000/portal
 - Simulador WhatsApp: http://localhost:3000/sim
+- Onboarding: http://localhost:3000/onboarding
+- Contador: http://localhost:3000/accountant
 - API docs: http://localhost:3000/docs
 - OpenAPI: http://localhost:3000/api/v1/openapi
 
 Tenant demo: `tenant_demo_mx` (Abarrotes Sol) · `tenant_demo_br` (Mercadinho Aurora)  
-API key demo: `pymebot_demo_key`## Monorepo
+API key demo: `pymebot_demo_key`  
+Webhook secret demo: `pymebot_webhook_secret`  
+Contador demo: `contador@demo.mx`
+
+## Monorepo
 
 | Path | Package |
 |------|---------|

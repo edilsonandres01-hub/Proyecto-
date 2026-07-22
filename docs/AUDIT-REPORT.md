@@ -1,53 +1,57 @@
 # PyMEBot — AUDIT REPORT (Agent-Supervisor)
 
-**Date:** 2026-07-22  
-**Verdict:** PASS  
-**Wave:** MVP + Waves 3–5
+**Date:** 2026-07-22T11:39:52.219Z
+**Verdict:** PASS
 
 ## Gates
 
-| Gate | Result |
-|------|--------|
-| Landing / fonts / atmosphere | PASS |
-| Portal + CRUD client | PASS |
-| WhatsApp simulator MX/BR | PASS |
-| Chat / products / payments / invoices APIs | PASS |
-| Reminders API + tax calendar | PASS |
-| Public API v1 + OpenAPI + /docs | PASS |
-| Billing sandbox + low-stock alerts | PASS |
-| Payment webhooks + CSV import | PASS |
-| Onboarding + referrals + analytics | PASS |
-| Feature flags (`GET /api/flags`) | PASS |
-| Accountant multi-tenant portal | PASS |
-| Chat rate-limit + idempotency | PASS |
-| Core / agents / adapters / Prisma | PASS |
-| Fiscal disclaimers | PASS |
-| Unit tests | PASS |
-| Production build | PASS |
+| Gate | Result | Detail |
+|------|--------|--------|
+| Landing page exists | PASS | / |
+| Brand PyMEBot in landing | PASS | / |
+| Expressive fonts (Fraunces) | PASS | / |
+| Atmosphere / gradient CSS | PASS | / |
+| Portal page | PASS | / |
+| WhatsApp simulator | PASS | / |
+| Chat API | PASS | / |
+| Products API | PASS | / |
+| Payments API | PASS | / |
+| Invoices API | PASS | / |
+| Core package | PASS | / |
+| Adapters package | PASS | / |
+| Agents package | PASS | / |
+| Prisma schema | PASS | / |
+| Fiscal disclaimer in agents | PASS | / |
+| Payment adapter factory | PASS | / |
+| Reminders API | PASS | / |
+| Public API v1 OpenAPI | PASS | / |
+| API docs page | PASS | / |
+| Portal client CRUD | PASS | / |
+| Tax calendar core | PASS | / |
+| Payment webhooks | PASS | / |
+| CSV import API | PASS | / |
+| Billing API | PASS | / |
+| Low-stock alerts API | PASS | / |
+| Analytics API | PASS | / |
+| Referrals API | PASS | / |
+| Onboarding page | PASS | / |
+| Accountant portal | PASS | / |
+| Feature flags API | PASS | / |
+| Lead authorization log | PASS | / |
+| Unit tests green | PASS | /n/o/d/e/ /-/-/i/m/p/o/r/t/ /t/s/x/ /-/-/t/e/s/t/ /s/r/c///l/i/b///s/m/o/k/e/./t/e/s/t/./t/s/
+/
+/T/A/P/ /v/e/r/s/i/o/n/  |
+| Production build green | PASS | /E/n/v/i/r/o/n/m/e/n/t/ /v/a/r/i/a/b/l/e/s/ /l/o/a/d/e/d/ /f/r/o/m/ /./e/n/v/
+/ |
 
-**Total:** PASS
+## Summary
 
-## Waves 3–5 deliverables
+- Total checks: 33
+- Passed: 33
+- Failed: 0
 
-### Wave 3
-- Billing sandbox (`/api/billing`) + portal subscribe/cancel
-- Low-stock alerts (`/api/alerts/low-stock`)
-- Payment webhooks (`/api/webhooks/payments`) + confirm
-- CSV product import (`/api/products/import`)
+MVP unicorn structural gates satisfied for shippable demo.
 
-### Wave 4
-- Self-serve onboarding `/onboarding` + `POST /api/onboarding`
-- Referrals model + `/api/referrals` (create/accept)
-- Analytics summary `GET /api/analytics`
+## Honest scope note
 
-### Wave 5
-- Accountant portal `/accountant` + `GET /api/accountant/overview?email=`
-  - Demo emails `contador@demo.mx` / `contador@demo.br` → both demo tenants; else 403
-- Feature flags: `billing`, `referrals`, `analytics`, `accountantPortal`, `csvImport`, `webhooks`
-  - Default all true; override via `PYMEBOT_FLAGS` JSON or comma disabled list
-  - Portal sections gated by flags
-- Chat harden: 30 req/min/tenant → 429; optional `X-Idempotency-Key` (5 min) for `create_draft_order`
-
-## Scope honesty
-
-Meta WhatsApp Cloud API, PAC SAT, SEFAZ y PSP reales siguen mockeados. Rate-limit e idempotency son in-memory (best effort, no Redis).
+Real Meta WhatsApp Cloud API, PAC SAT, SEFAZ, and STP/Pix PSP integrations remain mocked behind production-shaped interfaces.
