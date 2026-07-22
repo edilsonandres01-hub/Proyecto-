@@ -1,61 +1,45 @@
-# PyMEBot — AUDIT REPORT (Agent-Supervisor)
+# PyMEBot — AUDIT REPORT (Lead Engineer Authorization)
 
-**Date:** 2026-07-22T11:50:10.438Z
-**Verdict:** PASS
+**Date:** 2026-07-22  
+**Role:** Ingeniero a cargo  
+**Verdict:** AUTHORIZED — PASS (waves 0–8)  
+**Supervisor:** 37/37 structural gates PASS (`npm run audit:supervisor`)
 
-## Gates
+## Protocol interdisciplinario
 
-| Gate | Result | Detail |
-|------|--------|--------|
-| Landing page exists | PASS | / |
-| Brand PyMEBot in landing | PASS | / |
-| Expressive fonts (Fraunces) | PASS | / |
-| Atmosphere / gradient CSS | PASS | / |
-| Portal page | PASS | / |
-| WhatsApp simulator | PASS | / |
-| Chat API | PASS | / |
-| Products API | PASS | / |
-| Payments API | PASS | / |
-| Invoices API | PASS | / |
-| Core package | PASS | / |
-| Adapters package | PASS | / |
-| Agents package | PASS | / |
-| Prisma schema | PASS | / |
-| Fiscal disclaimer in agents | PASS | / |
-| Payment adapter factory | PASS | / |
-| Reminders API | PASS | / |
-| Public API v1 OpenAPI | PASS | / |
-| API docs page | PASS | / |
-| Portal client CRUD | PASS | / |
-| Tax calendar core | PASS | / |
-| Payment webhooks | PASS | / |
-| CSV import API | PASS | / |
-| Billing API | PASS | / |
-| Low-stock alerts API | PASS | / |
-| Analytics API | PASS | / |
-| Referrals API | PASS | / |
-| Onboarding page | PASS | / |
-| Accountant portal | PASS | / |
-| Feature flags API | PASS | / |
-| Lead authorization log | PASS | / |
-| Ops health page | PASS | / |
-| Notifications API | PASS | / |
-| Analytics export | PASS | / |
-| Webhook events API | PASS | / |
-| Unit tests green | PASS | /o/d/e/ /-/-/i/m/p/o/r/t/ /t/s/x/ /-/-/t/e/s/t/ /s/r/c///l/i/b///s/m/o/k/e/./t/e/s/t/./t/s/
-/
-/T/A/P/ /v/e/r/s/i/o/n/ /1 |
-| Production build green | PASS | /E/n/v/i/r/o/n/m/e/n/t/ /v/a/r/i/a/b/l/e/s/ /l/o/a/d/e/d/ /f/r/o/m/ /./e/n/v/
-/ |
+1. Agentes del squad implementan por oleada  
+2. Ingeniero a cargo revisa (test + build + smoke)  
+3. Solo entonces **AUTHORIZED** en [`LEAD-AUTHORIZATION-LOG.md`](./LEAD-AUTHORIZATION-LOG.md)  
+4. Push a `cursor/pyme-bot-engineering-playbook-9ff6`
 
-## Summary
+## Oleadas autorizadas
 
-- Total checks: 37
-- Passed: 37
-- Failed: 0
+| Wave | Scope | Lead |
+|------|-------|------|
+| 0–2 | MVP, portal CRUD, tax, API v1, MX/BR | AUTHORIZED |
+| 3 | Webhooks, CSV, low-stock, billing | AUTHORIZED |
+| 4 | Analytics, referrals, onboarding | AUTHORIZED |
+| 5 | Accountant, flags, chat harden | AUTHORIZED |
+| 6 | WebhookEvent log, export CSV, notifications | AUTHORIZED |
+| 7 | `/ops`, portal filters | AUTHORIZED |
+| 8 | NPS + `/dataroom` | AUTHORIZED |
 
-MVP unicorn structural gates satisfied for shippable demo.
+## Superficies demo
 
-## Honest scope note
+| Ruta | Uso |
+|------|-----|
+| `/` | Landing |
+| `/portal` | Merchant ops |
+| `/sim` | WhatsApp sandbox |
+| `/onboarding` | Alta self-serve |
+| `/accountant` | Vista multi-tenant |
+| `/ops` | Health Lead |
+| `/dataroom` | KPIs fundraising sandbox |
+| `/docs` | API pública |
 
-Real Meta WhatsApp Cloud API, PAC SAT, SEFAZ, and STP/Pix PSP integrations remain mocked behind production-shaped interfaces.
+## Bloqueado (requiere credenciales / policy)
+
+- Meta WhatsApp Cloud API producción  
+- PAC SAT / SEFAZ / PSP live  
+- Stripe live  
+- SOC2 / pentest
