@@ -56,5 +56,15 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  return NextResponse.json({ payment: updated, confirmed });
+  const event = await prisma.webhookEvent.create({
+    data: {
+      provider: 'payments',
+      intentId,
+      paymentId: payment.id,
+      status: confirmed.status,
+      payload: body,
+    },
+  });
+
+  return NextResponse.json({ payment: updated, confirmed, event });
 }

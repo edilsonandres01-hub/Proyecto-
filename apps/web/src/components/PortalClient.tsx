@@ -57,6 +57,22 @@ type ReferralRow = {
   createdAt: string;
 };
 
+type NotificationItem = {
+  type: string;
+  title: string;
+  body: string;
+  severity: 'info' | 'warning' | 'critical';
+};
+
+type WebhookEventRow = {
+  id: string;
+  provider: string;
+  intentId: string | null;
+  paymentId: string | null;
+  status: string;
+  createdAt: string;
+};
+
 type Props = {
   tenant: {
     id: string;
@@ -91,6 +107,8 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
   const [stock, setStock] = useState('0');
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [webhookEvents, setWebhookEvents] = useState<WebhookEventRow[]>([]);
   const [acceptCode, setAcceptCode] = useState('');
 
   const isBR = tenant.country === 'BR';
@@ -124,13 +142,32 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
       } else {
         setReferrals([]);
       }
+
+      if (flags.notifications) {
+        const res = await fetch(`/api/notifications?tenantId=${tenant.id}`);
+        if (!cancelled && res.ok) {
+          setNotifications((await res.json()) as NotificationItem[]);
+        }
+      } else {
+        setNotifications([]);
+      }
+
+      if (flags.webhooks) {
+        const res = await fetch(`/api/webhooks/events?tenantId=${tenant.id}`);
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setWebhookEvents((data.events as WebhookEventRow[]) ?? []);
+        }
+      } else {
+        setWebhookEvents([]);
+      }
     }
 
     void load();
     return () => {
       cancelled = true;
     };
-  }, [tenant.id, flags.analytics, flags.referrals]);
+  }, [tenant.id, flags.analytics, flags.referrals, flags.notifications, flags.webhooks]);
 
   async function billingAction(action: 'subscribe' | 'cancel', plan?: 'starter' | 'growth') {
     setMsg(null);
@@ -339,6 +376,9 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
             <Link href="/docs" className="btn-ghost">
               API
             </Link>
+            <Link href="/ops" className="btn-ghost">
+              Ops
+            </Link>
             <Link href="/" className="btn-primary">
               Inicio
             </Link>
@@ -356,9 +396,54 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
           {pending && <p className="mt-1 text-xs text-[var(--moss)]">Actualizando…</p>}
         </section>
 
+        {flags.notifications && (
+          <section>
+            <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">Alertas</h2>
+            <p className="mt-2 text-xs text-[var(--moss)]">
+              Stock bajo y obligaciones fiscales en los próximos 7 días.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {notifications.length === 0 && (
+                <li className="text-sm text-[var(--moss)]">Sin alertas por ahora.</li>
+              )}
+              {notifications.slice(0, 5).map((n, i) => (
+                <li
+                  key={`${n.type}-${n.title}-${i}`}
+                  className="border-t border-[var(--line)] pt-3 text-sm"
+                >
+                  <p className="font-medium">
+                    <span
+                      className={
+                        n.severity === 'critical'
+                          ? 'text-[var(--coral)]'
+                          : n.severity === 'warning'
+                            ? 'text-[var(--amber)]'
+                            : 'text-[var(--moss)]'
+                      }
+                    >
+                      {n.severity}
+                    </span>
+                    {' · '}
+                    {n.title}
+                  </p>
+                  <p className="text-[var(--moss)]">{n.body}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {flags.analytics && (
           <section>
-            <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">Analytics</h2>
+            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--line)] pb-3">
+              <h2 className="display text-2xl">Analytics</h2>
+              <a
+                href={`/api/analytics/export?tenantId=${tenant.id}`}
+                className="rounded-full border border-[var(--line)] px-3 py-1 text-xs"
+              >
+                Exportar CSV
+              </a>
+            </div>
             <p className="mt-2 text-xs text-[var(--moss)]">KPIs del tenant · últimos 7 días en ingresos.</p>
             {!analytics && <p className="mt-4 text-sm text-[var(--moss)]">Cargando…</p>}
             {analytics && (
@@ -414,9 +499,25 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
         )}
 
         <section>
-          <div className="flex items-end justify-between gap-4 border-b border-[var(--line)] pb-3">
+          <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--line)] pb-3">
             <h2 className="display text-2xl">Inventario</h2>
-            <span className="text-sm text-[var(--moss)]">{tenant.products.length} SKUs</span>
+            <span className="text-sm text-[var(--moss)]">
+              {filteredProducts.length}
+              {productFilter ? ` / ${tenant.products.length}` : ''} SKUs
+            </span>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-xs uppercase tracking-wider text-[var(--moss)]">
+              Filtrar por nombre o SKU
+              <input
+                type="search"
+                value={productQuery}
+                onChange={(e) => setProductQuery(e.target.value)}
+                placeholder="Coca, SKU-001…"
+                className="mt-1 w-full max-w-md rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-sm text-[var(--ink)]"
+              />
+            </label>
           </div>
 
           <form onSubmit={createProduct} className="mt-4 grid gap-3 sm:grid-cols-5">
@@ -481,7 +582,14 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {tenant.products.map((p) => (
+                {filteredProducts.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-4 text-[var(--moss)]">
+                      Ningún producto coincide con el filtro.
+                    </td>
+                  </tr>
+                )}
+                {filteredProducts.map((p) => (
                   <tr key={p.id} className="border-t border-[var(--line)]">
                     <td className="py-3 font-mono text-xs">{p.sku}</td>
                     <td className="py-3">{p.name}</td>
@@ -520,12 +628,35 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
         </section>
 
         <section>
-          <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">Pedidos</h2>
+          <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--line)] pb-3">
+            <h2 className="display text-2xl">Pedidos</h2>
+            <label className="text-sm text-[var(--moss)]">
+              Status{' '}
+              <select
+                className="ml-1 rounded-full border border-[var(--line)] bg-white px-3 py-2 text-sm text-[var(--ink)]"
+                value={orderStatusFilter}
+                onChange={(e) =>
+                  setOrderStatusFilter(
+                    e.target.value as 'all' | 'confirmed' | 'paid' | 'invoiced' | 'cancelled',
+                  )
+                }
+              >
+                <option value="all">all</option>
+                <option value="confirmed">confirmed</option>
+                <option value="paid">paid</option>
+                <option value="invoiced">invoiced</option>
+                <option value="cancelled">cancelled</option>
+              </select>
+            </label>
+          </div>
           <ul className="mt-4 divide-y divide-[var(--line)]">
             {tenant.orders.length === 0 && (
               <li className="py-4 text-[var(--moss)]">Aún no hay pedidos. Usa el simulador o crea ventas.</li>
             )}
-            {tenant.orders.map((o) => (
+            {tenant.orders.length > 0 && filteredOrders.length === 0 && (
+              <li className="py-4 text-[var(--moss)]">Ningún pedido con status «{orderStatusFilter}».</li>
+            )}
+            {filteredOrders.map((o) => (
               <li key={o.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
                 <div>
                   <p className="font-medium font-mono text-xs md:text-sm">{o.id}</p>
@@ -741,10 +872,33 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
 
         {flags.webhooks && (
           <section>
-            <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">Webhooks</h2>
+            <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">Webhooks recientes</h2>
             <p className="mt-2 text-sm text-[var(--moss)]">
               Endpoint sandbox: <code className="text-xs">POST /api/webhooks/payments</code>
             </p>
+            <ul className="mt-4 space-y-2 text-sm">
+              {webhookEvents.length === 0 && (
+                <li className="text-[var(--moss)]">Sin eventos aún.</li>
+              )}
+              {webhookEvents.map((ev) => (
+                <li
+                  key={ev.id}
+                  className="flex flex-wrap justify-between gap-2 border-t border-[var(--line)] pt-2"
+                >
+                  <span>
+                    <span className="font-medium uppercase tracking-wide">{ev.provider}</span>
+                    {' · '}
+                    {ev.status}
+                    {ev.intentId ? (
+                      <span className="ml-1 font-mono text-xs text-[var(--moss)]">{ev.intentId}</span>
+                    ) : null}
+                  </span>
+                  <span className="text-xs text-[var(--moss)]">
+                    {new Date(ev.createdAt).toLocaleString(isBR ? 'pt-BR' : 'es-MX')}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 

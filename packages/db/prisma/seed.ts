@@ -20,6 +20,7 @@ function periodEnd(daysFromNow: number): Date {
 }
 
 async function main() {
+  await prisma.webhookEvent.deleteMany();
   await prisma.referral.deleteMany();
   await prisma.subscription.deleteMany();
   await prisma.taxReminder.deleteMany();

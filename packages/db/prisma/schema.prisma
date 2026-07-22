@@ -137,9 +137,25 @@ model Payment {
   updatedAt   DateTime @updatedAt
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  webhookEvents WebhookEvent[]
 
   @@index([tenantId])
   @@index([orderId])
+}
+
+model WebhookEvent {
+  id        String   @id @default(cuid())
+  provider  String
+  intentId  String?
+  paymentId String?
+  status    String
+  payload   Json?
+  createdAt DateTime @default(now())
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([paymentId])
+  @@index([createdAt])
+  @@index([intentId])
 }
 
 model Invoice {

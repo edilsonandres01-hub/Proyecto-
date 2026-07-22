@@ -39,4 +39,5 @@ export {
   FEATURE_FLAG_KEYS,
   DEFAULT_FEATURE_FLAGS,
   resolveFeatureFlags,
+  getFeatureFlags,
 } from './featureFlags.js';

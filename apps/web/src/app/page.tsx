@@ -141,11 +141,16 @@ export default function HomePage() {
       </section>
 
       <footer className="relative z-10 border-t border-[var(--line)] px-5 py-10 text-sm text-[var(--moss)] md:px-8">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <p className="display text-lg text-[var(--ink)]">PyMEBot</p>
-          <p>
-            No sustituye asesoría fiscal. Integraciones reales Meta/PAC/SEFAZ requieren credenciales.
-          </p>
+          <div className="flex flex-wrap items-center gap-4">
+            <Link href="/ops" className="text-[var(--ink)] underline-offset-2 hover:underline">
+              Lead Ops
+            </Link>
+            <p>
+              No sustituye asesoría fiscal. Integraciones reales Meta/PAC/SEFAZ requieren credenciales.
+            </p>
+          </div>
         </div>
       </footer>
     </main>

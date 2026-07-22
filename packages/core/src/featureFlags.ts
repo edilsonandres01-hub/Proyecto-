@@ -5,6 +5,7 @@ export const FEATURE_FLAG_KEYS = [
   'accountantPortal',
   'csvImport',
   'webhooks',
+  'notifications',
 ] as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAG_KEYS)[number];
@@ -18,6 +19,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlags = {
   accountantPortal: true,
   csvImport: true,
   webhooks: true,
+  notifications: true,
 };
 
 function isFlagKey(value: string): value is FeatureFlagKey {
@@ -58,4 +60,9 @@ export function resolveFeatureFlags(rawEnv: string | undefined | null = process.
   }
 
   return flags;
+}
+
+/** Alias used by ops/health and Lead dashboards. */
+export function getFeatureFlags(rawEnv?: string | null): FeatureFlags {
+  return resolveFeatureFlags(rawEnv);
 }

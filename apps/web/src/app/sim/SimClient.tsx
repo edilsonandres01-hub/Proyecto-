@@ -25,6 +25,7 @@ const TENANTS = [
 const SUGGESTIONS_MX = [
   '¿Cuánto tengo de Coca-Cola 600ml?',
   'lista de inventario',
+  'stock bajo',
   'vende 2 Coca-Cola 600ml',
   'cobrar con SPEI',
   'facturar pedido',
@@ -34,6 +35,7 @@ const SUGGESTIONS_MX = [
 const SUGGESTIONS_BR = [
   'tem Coca 2L?',
   'lista de estoque',
+  'estoque baixo',
   'vende 2 Coca-Cola 2L',
   'cobrar com Pix',
   'faturar pedido',
