@@ -33,3 +33,10 @@ export { classifyIntent, IntentClassifier } from './intent.js';
 
 export type { TaxObligation } from './taxCalendar.js';
 export { getUpcomingObligations } from './taxCalendar.js';
+
+export type { FeatureFlagKey, FeatureFlags } from './featureFlags.js';
+export {
+  FEATURE_FLAG_KEYS,
+  DEFAULT_FEATURE_FLAGS,
+  resolveFeatureFlags,
+} from './featureFlags.js';

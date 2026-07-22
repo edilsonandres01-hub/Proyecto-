@@ -8,10 +8,12 @@ import {
   confirmOrder,
   createOrder,
   createProduct,
+  DEFAULT_FEATURE_FLAGS,
   findLowStock,
   formatMoney,
   getUpcomingObligations,
   money,
+  resolveFeatureFlags,
 } from '../src/index.js';
 
 describe('adjustStock', () => {
@@ -187,5 +189,27 @@ describe('getUpcomingObligations', () => {
     const ops = getUpcomingObligations('MX', asOf);
     assert.equal(ops[0]!.dueDate.getMonth(), 7); // August
     assert.equal(ops[0]!.dueDate.getDate(), 17);
+  });
+});
+
+describe('resolveFeatureFlags', () => {
+  it('defaults all flags to true', () => {
+    assert.deepEqual(resolveFeatureFlags(''), DEFAULT_FEATURE_FLAGS);
+    assert.deepEqual(resolveFeatureFlags(null), DEFAULT_FEATURE_FLAGS);
+  });
+
+  it('parses JSON overrides', () => {
+    const flags = resolveFeatureFlags('{"billing":false,"csvImport":false}');
+    assert.equal(flags.billing, false);
+    assert.equal(flags.csvImport, false);
+    assert.equal(flags.webhooks, true);
+  });
+
+  it('parses comma disabled list', () => {
+    const flags = resolveFeatureFlags('billing,webhooks,referrals');
+    assert.equal(flags.billing, false);
+    assert.equal(flags.webhooks, false);
+    assert.equal(flags.referrals, false);
+    assert.equal(flags.analytics, true);
   });
 });

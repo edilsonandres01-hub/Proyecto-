@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleTurn, type ToolCall } from '@pymebot/agents';
 import { createPaymentAdapter, createFiscalAdapter, type PaymentRail } from '@pymebot/adapters';
 import { prisma } from '@pymebot/db';
+import {
+  checkChatRateLimit,
+  getIdempotentResponse,
+  storeIdempotentResponse,
+} from '@/lib/chatGuard';
 
 export const runtime = 'nodejs';
 
@@ -16,6 +21,21 @@ export async function POST(req: NextRequest) {
     const tenantId = String(body.tenantId || 'tenant_demo_mx');
     const message = String(body.message || '');
     const lastOrderId = body.lastOrderId ? String(body.lastOrderId) : undefined;
+    const idempotencyKey = req.headers.get('x-idempotency-key')?.trim() || '';
+
+    if (!checkChatRateLimit(tenantId)) {
+      return NextResponse.json(
+        { error: 'rate_limited', detail: 'Max 30 requests per minute per tenant' },
+        { status: 429 },
+      );
+    }
+
+    if (idempotencyKey) {
+      const cached = getIdempotentResponse(`${tenantId}:${idempotencyKey}`);
+      if (cached !== undefined) {
+        return NextResponse.json(cached);
+      }
+    }
 
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
@@ -49,6 +69,7 @@ export async function POST(req: NextRequest) {
     let reply = result.reply;
     let orderId = lastOrderId;
     const tool: ToolCall = result.tool;
+    let createdDraftOrder = false;
 
     if (tool.name === 'create_draft_order') {
       const product = tenant.products.find((p) => p.id === tool.productId);
@@ -82,6 +103,7 @@ export async function POST(req: NextRequest) {
           return o;
         });
         orderId = order.id;
+        createdDraftOrder = true;
         reply =
           locale === 'pt-BR'
             ? `Pedido confirmado ${order.id}. Total ${(total / 100).toFixed(2)} ${product.currency}. Digite "cobrar" ou "faturar pedido".`
@@ -169,14 +191,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const payload = {
       agent: result.agent,
       intent: result.intent,
       reply,
       tool: result.tool,
       orderId,
       disclaimer: result.disclaimer,
-    });
+    };
+
+    // Best-effort idempotency for create_draft_order (5 min in-memory).
+    if (idempotencyKey && createdDraftOrder) {
+      storeIdempotentResponse(`${tenantId}:${idempotencyKey}`, payload);
+    }
+
+    return NextResponse.json(payload);
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'chat_failed', detail: String(err) }, { status: 500 });

@@ -33,9 +33,8 @@ export async function getDemoTenant(tenantId: string = DEMO_TENANTS.MX) {
 
 export async function listDemoTenants() {
   return prisma.tenant.findMany({
-    where: { id: { in: [DEMO_TENANTS.MX, DEMO_TENANTS.BR] } },
     select: { id: true, name: true, country: true },
-    orderBy: { country: 'asc' },
+    orderBy: [{ country: 'asc' }, { name: 'asc' }],
   });
 }
 

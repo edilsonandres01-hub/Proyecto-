@@ -20,6 +20,7 @@ function periodEnd(daysFromNow: number): Date {
 }
 
 async function main() {
+  await prisma.referral.deleteMany();
   await prisma.subscription.deleteMany();
   await prisma.taxReminder.deleteMany();
   await prisma.invoice.deleteMany();
@@ -38,11 +39,18 @@ async function main() {
       taxId: 'ASO850101XXX',
       phone: '+525512345678',
       users: {
-        create: {
-          email: 'dueno@abarrotes-sol.mx',
-          name: 'María Sol',
-          role: 'owner',
-        },
+        create: [
+          {
+            email: 'dueno@abarrotes-sol.mx',
+            name: 'María Sol',
+            role: 'owner',
+          },
+          {
+            email: 'contador@demo.mx',
+            name: 'Contador Demo MX',
+            role: 'accountant',
+          },
+        ],
       },
       products: {
         create: [
@@ -71,11 +79,18 @@ async function main() {
       taxId: '12345678000199',
       phone: '+5511987654321',
       users: {
-        create: {
-          email: 'dona@aurora.br',
-          name: 'Ana Aurora',
-          role: 'owner',
-        },
+        create: [
+          {
+            email: 'dona@aurora.br',
+            name: 'Ana Aurora',
+            role: 'owner',
+          },
+          {
+            email: 'contador@demo.br',
+            name: 'Contador Demo BR',
+            role: 'accountant',
+          },
+        ],
       },
       products: {
         create: [
@@ -122,6 +137,14 @@ async function main() {
         status: 'pending',
       },
     ],
+  });
+
+  await prisma.referral.create({
+    data: {
+      tenantId: tenant.id,
+      code: 'SOL-AMIGO',
+      status: 'pending',
+    },
   });
 
   console.log('Seeded tenants:', tenant.id, tenantBr.id);

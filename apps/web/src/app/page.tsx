@@ -64,8 +64,8 @@ export default function HomePage() {
             <Link href="/sim" className="btn-primary">
               Abrir simulador WhatsApp
             </Link>
-            <Link href="/portal" className="btn-ghost">
-              Ver portal merchant
+            <Link href="/onboarding" className="btn-ghost">
+              Crear cuenta demo
             </Link>
           </motion.div>
         </motion.div>

@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useState, useTransition } from 'react';
+import { FormEvent, useEffect, useState, useTransition } from 'react';
+import type { FeatureFlags } from '@pymebot/core';
 import { ImportCsvForm } from '@/components/ImportCsvForm';
 
 type Product = {
@@ -38,6 +39,24 @@ type Subscription = {
   currentPeriodEnd: string | null;
 } | null;
 
+type Analytics = {
+  ordersCount: number;
+  revenueCents: number;
+  paymentsCount: number;
+  invoicesCount: number;
+  lowStockCount: number;
+  topProducts: { name: string; qty: number }[];
+  revenueByDay: { day: string; cents: number }[];
+};
+
+type ReferralRow = {
+  id: string;
+  code: string;
+  invitedEmail: string | null;
+  status: string;
+  createdAt: string;
+};
+
 type Props = {
   tenant: {
     id: string;
@@ -52,6 +71,7 @@ type Props = {
   };
   tenants: TenantOption[];
   upcoming: { code: string; title: string; dueDate: string; daysUntil: number }[];
+  flags: FeatureFlags;
 };
 
 function money(cents: number, currency: string) {
@@ -61,7 +81,7 @@ function money(cents: number, currency: string) {
   }).format(cents / 100);
 }
 
-export function PortalClient({ tenant, tenants, upcoming }: Props) {
+export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
@@ -69,14 +89,48 @@ export function PortalClient({ tenant, tenants, upcoming }: Props) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('0');
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [referrals, setReferrals] = useState<ReferralRow[]>([]);
+  const [acceptCode, setAcceptCode] = useState('');
 
   const isBR = tenant.country === 'BR';
   const defaultRail = isBR ? 'pix' : 'spei';
   const sub = tenant.subscription;
+  const currency = isBR ? 'BRL' : 'MXN';
 
   function refresh() {
     startTransition(() => router.refresh());
   }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      if (flags.analytics) {
+        const res = await fetch(`/api/analytics?tenantId=${tenant.id}`);
+        if (!cancelled && res.ok) {
+          setAnalytics((await res.json()) as Analytics);
+        }
+      } else {
+        setAnalytics(null);
+      }
+
+      if (flags.referrals) {
+        const res = await fetch(`/api/referrals?tenantId=${tenant.id}`);
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setReferrals((data.referrals as ReferralRow[]) ?? []);
+        }
+      } else {
+        setReferrals([]);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [tenant.id, flags.analytics, flags.referrals]);
 
   async function billingAction(action: 'subscribe' | 'cancel', plan?: 'starter' | 'growth') {
     setMsg(null);
@@ -193,6 +247,56 @@ export function PortalClient({ tenant, tenants, upcoming }: Props) {
     }
     setMsg(`Pago confirmado (${data.payment?.status})`);
     refresh();
+    if (flags.analytics) {
+      const aRes = await fetch(`/api/analytics?tenantId=${tenant.id}`);
+      if (aRes.ok) setAnalytics((await aRes.json()) as Analytics);
+    }
+  }
+
+  async function createReferral() {
+    setMsg(null);
+    const res = await fetch('/api/referrals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantId: tenant.id, action: 'create' }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMsg(data.error || 'No se pudo generar el código');
+      return;
+    }
+    setMsg(`Código generado: ${data.referral?.code}`);
+    const listRes = await fetch(`/api/referrals?tenantId=${tenant.id}`);
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      setReferrals((listData.referrals as ReferralRow[]) ?? []);
+    }
+  }
+
+  async function acceptReferral(e: FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    const res = await fetch('/api/referrals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenantId: tenant.id,
+        action: 'accept',
+        code: acceptCode.trim(),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMsg(data.error || 'Código inválido');
+      return;
+    }
+    setAcceptCode('');
+    setMsg(`Código ${data.referral?.code} aceptado`);
+    const listRes = await fetch(`/api/referrals?tenantId=${tenant.id}`);
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      setReferrals((listData.referrals as ReferralRow[]) ?? []);
+    }
   }
 
   return (
@@ -227,6 +331,11 @@ export function PortalClient({ tenant, tenants, upcoming }: Props) {
             <Link href={`/sim?tenantId=${tenant.id}`} className="btn-ghost">
               Simulador
             </Link>
+            {flags.accountantPortal && (
+              <Link href="/accountant" className="btn-ghost">
+                Contador
+              </Link>
+            )}
             <Link href="/docs" className="btn-ghost">
               API
             </Link>
@@ -246,6 +355,63 @@ export function PortalClient({ tenant, tenants, upcoming }: Props) {
           {msg && <p className="mt-3 text-sm font-medium text-[var(--leaf)]">{msg}</p>}
           {pending && <p className="mt-1 text-xs text-[var(--moss)]">Actualizando…</p>}
         </section>
+
+        {flags.analytics && (
+          <section>
+            <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">Analytics</h2>
+            <p className="mt-2 text-xs text-[var(--moss)]">KPIs del tenant · últimos 7 días en ingresos.</p>
+            {!analytics && <p className="mt-4 text-sm text-[var(--moss)]">Cargando…</p>}
+            {analytics && (
+              <>
+                <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                  {[
+                    { label: 'Pedidos', value: String(analytics.ordersCount) },
+                    { label: 'Ingresos', value: money(analytics.revenueCents, currency) },
+                    { label: 'Pagos', value: String(analytics.paymentsCount) },
+                    { label: 'Facturas', value: String(analytics.invoicesCount) },
+                    { label: 'Stock bajo', value: String(analytics.lowStockCount) },
+                  ].map((kpi) => (
+                    <div key={kpi.label} className="border-t border-[var(--line)] pt-3">
+                      <dt className="text-xs uppercase tracking-wider text-[var(--moss)]">{kpi.label}</dt>
+                      <dd className="mt-1 text-lg font-semibold">{kpi.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="mt-8 grid gap-8 md:grid-cols-2">
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--amber)]">
+                      Top productos
+                    </h3>
+                    <ul className="mt-3 space-y-2 text-sm">
+                      {analytics.topProducts.length === 0 && (
+                        <li className="text-[var(--moss)]">Sin ventas aún.</li>
+                      )}
+                      {analytics.topProducts.map((p) => (
+                        <li key={p.name} className="flex justify-between border-t border-[var(--line)] pt-2">
+                          <span>{p.name}</span>
+                          <span className="font-mono text-xs">{p.qty}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--amber)]">
+                      Ingresos por día
+                    </h3>
+                    <ul className="mt-3 space-y-2 text-sm">
+                      {analytics.revenueByDay.map((d) => (
+                        <li key={d.day} className="flex justify-between border-t border-[var(--line)] pt-2">
+                          <span className="font-mono text-xs">{d.day}</span>
+                          <span>{money(d.cents, currency)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </>
+            )}
+          </section>
+        )}
 
         <section>
           <div className="flex items-end justify-between gap-4 border-b border-[var(--line)] pb-3">
@@ -293,13 +459,15 @@ export function PortalClient({ tenant, tenants, upcoming }: Props) {
             </div>
           </form>
 
-          <ImportCsvForm
-            tenantId={tenant.id}
-            onDone={(message) => {
-              setMsg(message);
-              refresh();
-            }}
-          />
+          {flags.csvImport && (
+            <ImportCsvForm
+              tenantId={tenant.id}
+              onDone={(message) => {
+                setMsg(message);
+                refresh();
+              }}
+            />
+          )}
 
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
@@ -468,61 +636,117 @@ export function PortalClient({ tenant, tenants, upcoming }: Props) {
           </div>
         </section>
 
-        <section>
-          <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">Billing (sandbox)</h2>
-          <p className="mt-2 text-xs text-[var(--moss)]">
-            Simulación de suscripción. No se cobra nada real.
-          </p>
-          <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-            <div className="text-sm">
-              <p>
-                Plan:{' '}
-                <span className="font-semibold uppercase tracking-wide">
-                  {sub?.plan ?? 'ninguno'}
-                </span>
-              </p>
-              <p className="mt-1 text-[var(--moss)]">
-                Status: {sub?.status ?? '—'}
-                {sub?.amountCents != null && (
-                  <>
-                    {' '}
-                    · {money(sub.amountCents, sub.currency)}
-                  </>
-                )}
-              </p>
-              {sub?.currentPeriodEnd && (
-                <p className="mt-1 text-[var(--moss)]">
-                  Periodo hasta{' '}
-                  {new Date(sub.currentPeriodEnd).toLocaleDateString(isBR ? 'pt-BR' : 'es-MX')}
+        {flags.billing && (
+          <section>
+            <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">Billing (sandbox)</h2>
+            <p className="mt-2 text-xs text-[var(--moss)]">
+              Simulación de suscripción. No se cobra nada real.
+            </p>
+            <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+              <div className="text-sm">
+                <p>
+                  Plan:{' '}
+                  <span className="font-semibold uppercase tracking-wide">
+                    {sub?.plan ?? 'ninguno'}
+                  </span>
                 </p>
-              )}
+                <p className="mt-1 text-[var(--moss)]">
+                  Status: {sub?.status ?? '—'}
+                  {sub?.amountCents != null && (
+                    <>
+                      {' '}
+                      · {money(sub.amountCents, sub.currency)}
+                    </>
+                  )}
+                </p>
+                {sub?.currentPeriodEnd && (
+                  <p className="mt-1 text-[var(--moss)]">
+                    Periodo hasta{' '}
+                    {new Date(sub.currentPeriodEnd).toLocaleDateString(isBR ? 'pt-BR' : 'es-MX')}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="rounded-full bg-[var(--ink)] px-4 py-2 text-xs text-[var(--lime)]"
+                  onClick={() => billingAction('subscribe', 'starter')}
+                >
+                  Subscribe Starter
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full border border-[var(--line)] px-4 py-2 text-xs"
+                  onClick={() => billingAction('subscribe', 'growth')}
+                >
+                  Subscribe Growth
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full border border-[var(--coral)]/40 px-4 py-2 text-xs text-[var(--coral)]"
+                  onClick={() => billingAction('cancel')}
+                  disabled={!sub || sub.status === 'canceled'}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+          </section>
+        )}
+
+        {flags.referrals && (
+          <section>
+            <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">Referidos (sandbox)</h2>
+            <p className="mt-2 text-xs text-[var(--moss)]">
+              Programa de referidos. Genera códigos o acepta uno pendiente.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                className="rounded-full bg-[var(--ink)] px-4 py-2 text-xs text-[var(--lime)]"
-                onClick={() => billingAction('subscribe', 'starter')}
+                className="btn-primary px-4 py-2 text-sm"
+                onClick={() => void createReferral()}
               >
-                Subscribe Starter
+                Generar código
               </button>
-              <button
-                type="button"
-                className="rounded-full border border-[var(--line)] px-4 py-2 text-xs"
-                onClick={() => billingAction('subscribe', 'growth')}
-              >
-                Subscribe Growth
-              </button>
-              <button
-                type="button"
-                className="rounded-full border border-[var(--coral)]/40 px-4 py-2 text-xs text-[var(--coral)]"
-                onClick={() => billingAction('cancel')}
-                disabled={!sub || sub.status === 'canceled'}
-              >
-                Cancel
-              </button>
+              <form onSubmit={acceptReferral} className="flex flex-wrap gap-2">
+                <input
+                  value={acceptCode}
+                  onChange={(e) => setAcceptCode(e.target.value)}
+                  placeholder="Código a aceptar"
+                  className="rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-sm uppercase"
+                  required
+                />
+                <button type="submit" className="rounded-full border border-[var(--line)] px-4 py-2 text-xs">
+                  Aceptar código
+                </button>
+              </form>
             </div>
-          </div>
-        </section>
+            <ul className="mt-4 space-y-2 text-sm">
+              {referrals.length === 0 && <li className="text-[var(--moss)]">Sin códigos aún.</li>}
+              {referrals.map((r) => (
+                <li
+                  key={r.id}
+                  className="flex flex-wrap justify-between gap-2 border-t border-[var(--line)] pt-2"
+                >
+                  <span className="font-mono font-medium">{r.code}</span>
+                  <span className="text-[var(--moss)]">
+                    {r.status}
+                    {r.invitedEmail ? ` · ${r.invitedEmail}` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {flags.webhooks && (
+          <section>
+            <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">Webhooks</h2>
+            <p className="mt-2 text-sm text-[var(--moss)]">
+              Endpoint sandbox: <code className="text-xs">POST /api/webhooks/payments</code>
+            </p>
+          </section>
+        )}
 
         <section>
           <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">

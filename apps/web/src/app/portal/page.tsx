@@ -1,4 +1,4 @@
-import { getUpcomingObligations } from '@pymebot/core';
+import { getUpcomingObligations, resolveFeatureFlags } from '@pymebot/core';
 import { PortalClient } from '@/components/PortalClient';
 import { DEMO_TENANTS, getTenantById, listDemoTenants } from '@/lib/tenant';
 import Link from 'next/link';
@@ -34,6 +34,8 @@ export default async function PortalPage({ searchParams }: Props) {
     daysUntil: o.daysUntil,
   }));
 
+  const flags = resolveFeatureFlags();
+
   return (
     <PortalClient
       tenant={{
@@ -63,6 +65,7 @@ export default async function PortalPage({ searchParams }: Props) {
       }}
       tenants={tenants}
       upcoming={upcoming}
+      flags={flags}
     />
   );
 }

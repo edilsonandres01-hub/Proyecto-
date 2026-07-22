@@ -20,7 +20,20 @@ model Tenant {
   payments     Payment[]
   invoices     Invoice[]
   taxReminders TaxReminder[]
+  referrals    Referral[]
   subscription Subscription?
+}
+
+model Referral {
+  id           String   @id @default(cuid())
+  tenantId     String
+  code         String   @unique
+  invitedEmail String?
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
 
 model Subscription {
