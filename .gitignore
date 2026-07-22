@@ -1,0 +1,13 @@
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+dist/
+**/dist/
+*.db
+*.db-journal
+.env
+.env.local
+.DS_Store
+coverage/
+apps/web/tsconfig.tsbuildinfo

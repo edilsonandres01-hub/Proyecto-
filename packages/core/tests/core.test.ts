@@ -98,7 +98,8 @@ describe('classifyIntent', () => {
   it('classifies product intents (es/pt)', () => {
     assert.equal(classifyIntent('¿Cuánto stock tengo de café?'), 'product');
     assert.equal(classifyIntent('Qual o preço do produto?'), 'product');
-    assert.equal(classifyIntent('Quiero hacer un pedido'), 'product');
+    assert.equal(classifyIntent('Quiero vender un producto'), 'product');
+    assert.equal(classifyIntent('facturar pedido'), 'fiscal');
   });
 
   it('classifies payment intents', () => {
