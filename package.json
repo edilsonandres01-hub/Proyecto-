@@ -1,0 +1,23 @@
+{
+  "name": "pymebot",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w web",
+    "build": "npm run build -w @pymebot/adapters && npm run build -w @pymebot/agents && npm run db:generate -w @pymebot/db && npm run build -w web",
+    "start": "npm run start -w web",
+    "test": "npm run test -w @pymebot/core && npm run test -w @pymebot/agents && npm run test -w web",
+    "db:generate": "npm run db:generate -w @pymebot/db",
+    "db:push": "npm run db:push -w @pymebot/db",
+    "db:seed": "npm run db:seed -w @pymebot/db",
+    "lint": "npm run lint -w web",
+    "audit:supervisor": "node scripts/supervisor-audit.mjs",
+    "setup": "npm install && npm run db:generate && npm run db:push && npm run db:seed"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
