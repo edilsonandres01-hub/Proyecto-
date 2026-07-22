@@ -11,6 +11,7 @@ import {
   DEFAULT_FEATURE_FLAGS,
   findLowStock,
   formatMoney,
+  getFeatureFlags,
   getUpcomingObligations,
   money,
   resolveFeatureFlags,
@@ -211,5 +212,12 @@ describe('resolveFeatureFlags', () => {
     assert.equal(flags.webhooks, false);
     assert.equal(flags.referrals, false);
     assert.equal(flags.analytics, true);
+  });
+});
+
+describe('getFeatureFlags', () => {
+  it('aliases resolveFeatureFlags for ops health', () => {
+    assert.deepEqual(getFeatureFlags(''), DEFAULT_FEATURE_FLAGS);
+    assert.equal(getFeatureFlags('{"analytics":false}').analytics, false);
   });
 });
