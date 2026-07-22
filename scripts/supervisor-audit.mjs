@@ -64,6 +64,12 @@ check('Onboarding page', existsSync(join(root, 'apps/web/src/app/onboarding/page
 check('Accountant portal', existsSync(join(root, 'apps/web/src/app/accountant/page.tsx')));
 check('Feature flags API', existsSync(join(root, 'apps/web/src/app/api/flags/route.ts')));
 check('Lead authorization log', existsSync(join(root, 'docs/LEAD-AUTHORIZATION-LOG.md')));
+check('Ops health page', existsSync(join(root, 'apps/web/src/app/ops/page.tsx')));
+check('Notifications API', existsSync(join(root, 'apps/web/src/app/api/notifications/route.ts')));
+check('Analytics export', existsSync(join(root, 'apps/web/src/app/api/analytics/export/route.ts')));
+check('Webhook events API', existsSync(join(root, 'apps/web/src/app/api/webhooks/events/route.ts')));
+check('NPS API', existsSync(join(root, 'apps/web/src/app/api/nps/route.ts')));
+check('Dataroom page', existsSync(join(root, 'apps/web/src/app/dataroom/page.tsx')));
 
 
 const test = spawnSync('npm', ['run', 'test'], { cwd: root, encoding: 'utf8', shell: true });
