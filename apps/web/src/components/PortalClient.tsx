@@ -73,6 +73,13 @@ type WebhookEventRow = {
   createdAt: string;
 };
 
+type NpsRow = {
+  id: string;
+  score: number;
+  comment: string | null;
+  createdAt: string;
+};
+
 type Props = {
   tenant: {
     id: string;
@@ -109,6 +116,11 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
   const [referrals, setReferrals] = useState<ReferralRow[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [webhookEvents, setWebhookEvents] = useState<WebhookEventRow[]>([]);
+  const [npsScore, setNpsScore] = useState('9');
+  const [npsComment, setNpsComment] = useState('');
+  const [npsAverage, setNpsAverage] = useState<number | null>(null);
+  const [npsCount, setNpsCount] = useState(0);
+  const [npsResponses, setNpsResponses] = useState<NpsRow[]>([]);
   const [acceptCode, setAcceptCode] = useState('');
   const [productQuery, setProductQuery] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState<
@@ -179,6 +191,20 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
       } else {
         setWebhookEvents([]);
       }
+
+      {
+        const res = await fetch(`/api/nps?tenantId=${tenant.id}`);
+        if (!cancelled && res.ok) {
+          const data = (await res.json()) as {
+            average: number | null;
+            count: number;
+            responses: NpsRow[];
+          };
+          setNpsAverage(data.average);
+          setNpsCount(data.count);
+          setNpsResponses(data.responses ?? []);
+        }
+      }
     }
 
     void load();
@@ -186,6 +212,46 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
       cancelled = true;
     };
   }, [tenant.id, flags.analytics, flags.referrals, flags.notifications, flags.webhooks]);
+
+  async function loadNps() {
+    const res = await fetch(`/api/nps?tenantId=${tenant.id}`);
+    if (!res.ok) return;
+    const data = (await res.json()) as {
+      average: number | null;
+      count: number;
+      responses: NpsRow[];
+    };
+    setNpsAverage(data.average);
+    setNpsCount(data.count);
+    setNpsResponses(data.responses ?? []);
+  }
+
+  async function submitNps(e: FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    const score = Number(npsScore);
+    if (!Number.isInteger(score) || score < 0 || score > 10) {
+      setMsg('NPS debe ser un entero 0–10');
+      return;
+    }
+    const res = await fetch('/api/nps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenantId: tenant.id,
+        score,
+        comment: npsComment.trim() || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setMsg(data.error || 'No se pudo guardar NPS');
+      return;
+    }
+    setNpsComment('');
+    setMsg(`NPS ${data.response?.score} registrado`);
+    await loadNps();
+  }
 
   async function billingAction(action: 'subscribe' | 'cancel', plan?: 'starter' | 'growth') {
     setMsg(null);
@@ -965,6 +1031,69 @@ export function PortalClient({ tenant, tenants, upcoming, flags }: Props) {
               </ul>
             </div>
           </div>
+        </section>
+
+        <section>
+          <h2 className="display border-b border-[var(--line)] pb-3 text-2xl">Tu NPS</h2>
+          <p className="mt-2 text-sm text-[var(--moss)]">
+            ¿Qué tan probable es que recomiendes PyMEBot? (0–10)
+            {npsCount > 0 && (
+              <>
+                {' '}
+                · promedio {npsAverage ?? '—'} ({npsCount} respuesta{npsCount === 1 ? '' : 's'})
+              </>
+            )}
+          </p>
+          <form onSubmit={submitNps} className="mt-4 flex flex-wrap items-end gap-3">
+            <label className="text-sm">
+              <span className="mb-1 block text-xs uppercase tracking-wider text-[var(--moss)]">
+                Score
+              </span>
+              <select
+                value={npsScore}
+                onChange={(e) => setNpsScore(e.target.value)}
+                className="rounded-lg border border-[var(--line)] bg-white px-3 py-2"
+              >
+                {Array.from({ length: 11 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="min-w-[12rem] flex-1 text-sm">
+              <span className="mb-1 block text-xs uppercase tracking-wider text-[var(--moss)]">
+                Comentario (opcional)
+              </span>
+              <input
+                value={npsComment}
+                onChange={(e) => setNpsComment(e.target.value)}
+                placeholder="¿Qué mejorarías?"
+                className="w-full rounded-lg border border-[var(--line)] bg-white px-3 py-2"
+              />
+            </label>
+            <button type="submit" className="btn-primary px-4 py-2 text-sm">
+              Enviar
+            </button>
+          </form>
+          {npsResponses.length > 0 && (
+            <ul className="mt-4 space-y-2 text-sm">
+              {npsResponses.slice(0, 5).map((r) => (
+                <li
+                  key={r.id}
+                  className="flex flex-wrap justify-between gap-2 border-t border-[var(--line)] pt-2"
+                >
+                  <span>
+                    <span className="font-semibold">{r.score}</span>
+                    {r.comment ? ` · ${r.comment}` : ''}
+                  </span>
+                  <span className="text-xs text-[var(--moss)]">
+                    {new Date(r.createdAt).toLocaleString(isBR ? 'pt-BR' : 'es-MX')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
     </main>

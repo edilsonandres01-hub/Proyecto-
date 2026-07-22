@@ -147,6 +147,12 @@ export default function HomePage() {
             <Link href="/ops" className="text-[var(--ink)] underline-offset-2 hover:underline">
               Lead Ops
             </Link>
+            <Link
+              href="/dataroom"
+              className="text-xs text-[var(--moss)]/70 underline-offset-2 hover:underline"
+            >
+              Data room
+            </Link>
             <p>
               No sustituye asesoría fiscal. Integraciones reales Meta/PAC/SEFAZ requieren credenciales.
             </p>

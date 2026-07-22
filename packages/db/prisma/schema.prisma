@@ -22,6 +22,19 @@ model Tenant {
   taxReminders TaxReminder[]
   referrals    Referral[]
   subscription Subscription?
+  npsResponses NpsResponse[]
+}
+
+model NpsResponse {
+  id        String   @id @default(cuid())
+  tenantId  String
+  score     Int
+  comment   String?
+  createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([createdAt])
 }
 
 model Referral {
