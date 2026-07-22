@@ -1,47 +1,33 @@
 # PyMEBot — AUDIT REPORT (Agent-Supervisor)
 
-**Date:** 2026-07-22T11:05:18.658Z
-**Verdict:** PASS
+**Date:** 2026-07-22  
+**Verdict:** PASS  
+**Wave:** MVP + Fase 2/3 stubs (portal CRUD, tax reminders, public API, MX/BR)
 
 ## Gates
 
-| Gate | Result | Detail |
-|------|--------|--------|
-| Landing page exists | PASS | / |
-| Brand PyMEBot in landing | PASS | / |
-| Expressive fonts (Fraunces) | PASS | / |
-| Atmosphere / gradient CSS | PASS | / |
-| Portal page | PASS | / |
-| WhatsApp simulator | PASS | / |
-| Chat API | PASS | / |
-| Products API | PASS | / |
-| Payments API | PASS | / |
-| Invoices API | PASS | / |
-| Core package | PASS | / |
-| Adapters package | PASS | / |
-| Agents package | PASS | / |
-| Prisma schema | PASS | / |
-| Fiscal disclaimer in agents | PASS | / |
-| Payment adapter factory | PASS | / |
-| Reminders API | PASS | / |
-| Public API v1 OpenAPI | PASS | / |
-| API docs page | PASS | / |
-| Portal client CRUD | PASS | / |
-| Tax calendar core | PASS | / |
-| Unit tests green | PASS | /d/e/ /-/-/i/m/p/o/r/t/ /t/s/x/ /-/-/t/e/s/t/ /s/r/c///l/i/b///s/m/o/k/e/./t/e/s/t/./t/s/
-/
-/T/A/P/ /v/e/r/s/i/o/n/ /1/3 |
-| Production build green | PASS | /E/n/v/i/r/o/n/m/e/n/t/ /v/a/r/i/a/b/l/e/s/ /l/o/a/d/e/d/ /f/r/o/m/ /./e/n/v/
-/ |
+| Gate | Result |
+|------|--------|
+| Landing / fonts / atmosphere | PASS |
+| Portal + CRUD client | PASS |
+| WhatsApp simulator MX/BR | PASS |
+| Chat / products / payments / invoices APIs | PASS |
+| Reminders API + tax calendar | PASS |
+| Public API v1 + OpenAPI + /docs | PASS |
+| Core / agents / adapters / Prisma | PASS |
+| Fiscal disclaimers | PASS |
+| Unit tests | PASS |
+| Production build | PASS |
 
-## Summary
+**Total:** 23/23 PASS
 
-- Total checks: 23
-- Passed: 23
-- Failed: 0
+## Wave deliverables verified
 
-MVP unicorn structural gates satisfied for shippable demo.
+- Portal: alta inventario, ±stock, borrar, SPEI/CoDi/Pix, facturar, cancelar pedido, recordatorios
+- Simulador: selector tenant MX/BR + sugerencias i18n + obligaciones fiscales
+- `GET /api/reminders`, `GET /api/v1/openapi`, `/docs`
+- Auth demo `X-Api-Key: pymebot_demo_key`
 
-## Honest scope note
+## Scope honesty
 
-Real Meta WhatsApp Cloud API, PAC SAT, SEFAZ, and STP/Pix PSP integrations remain mocked behind production-shaped interfaces.
+Meta WhatsApp Cloud API, PAC SAT, SEFAZ y PSP reales siguen mockeados.
