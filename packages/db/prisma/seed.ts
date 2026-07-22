@@ -2,7 +2,19 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+/** Next calendar occurrence of `dayOfMonth` on or after today. */
+function nextDueDate(dayOfMonth: number): Date {
+  const now = new Date();
+  const base = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let due = new Date(base.getFullYear(), base.getMonth(), dayOfMonth);
+  if (due < base) {
+    due = new Date(base.getFullYear(), base.getMonth() + 1, dayOfMonth);
+  }
+  return due;
+}
+
 async function main() {
+  await prisma.taxReminder.deleteMany();
   await prisma.invoice.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.orderItem.deleteMany();
@@ -56,6 +68,35 @@ async function main() {
         ],
       },
     },
+  });
+
+  const ivaDue = nextDueDate(17);
+  const dasDue = nextDueDate(20);
+
+  await prisma.taxReminder.createMany({
+    data: [
+      {
+        tenantId: tenant.id,
+        title: 'IVA mensual — recordatorio T-7',
+        dueDate: ivaDue,
+        regime: 'general',
+        status: 'pending',
+      },
+      {
+        tenantId: tenant.id,
+        title: 'ISR provisional — recordatorio T-7',
+        dueDate: ivaDue,
+        regime: 'general',
+        status: 'pending',
+      },
+      {
+        tenantId: tenantBr.id,
+        title: 'DAS Simples Nacional',
+        dueDate: dasDue,
+        regime: 'simples',
+        status: 'pending',
+      },
+    ],
   });
 
   console.log('Seeded tenants:', tenant.id, tenantBr.id);

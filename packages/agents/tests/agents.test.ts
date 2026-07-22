@@ -36,6 +36,22 @@ describe('agents orchestrator', () => {
     assert.ok(r.disclaimer);
   });
 
+  it('lists tax reminders for IVA/obligaciones', () => {
+    const r = handleTurn('¿Cuáles son mis obligaciones de IVA?', ctx);
+    assert.equal(r.agent, 'fiscal');
+    assert.equal(r.tool.name, 'list_tax_reminders');
+    assert.match(r.reply, /IVA declaración mensual/);
+    assert.match(r.reply, /ISR provisional/);
+  });
+
+  it('lists DAS obligations for BR tenants', () => {
+    const brCtx = { ...ctx, country: 'BR' as const, locale: 'pt-BR' as const };
+    const r = handleTurn('Quais são as obrigações DAS?', brCtx);
+    assert.equal(r.agent, 'fiscal');
+    assert.equal(r.tool.name, 'list_tax_reminders');
+    assert.match(r.reply, /DAS Simples/);
+  });
+
   it('creates payment tool when order exists', () => {
     const r = handleTurn('cobrar con SPEI', ctx, { lastOrderId: 'ord_1' });
     assert.equal(r.tool.name, 'create_payment');

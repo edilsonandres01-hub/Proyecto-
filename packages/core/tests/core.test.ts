@@ -9,6 +9,7 @@ import {
   createOrder,
   createProduct,
   formatMoney,
+  getUpcomingObligations,
   money,
 } from '../src/index.js';
 
@@ -131,5 +132,33 @@ describe('formatMoney', () => {
     assert.match(brl, /19/);
     assert.ok(mxn.includes('19.99') || mxn.includes('19,99'));
     assert.ok(brl.includes('19.99') || brl.includes('19,99'));
+  });
+});
+
+describe('getUpcomingObligations', () => {
+  it('returns MX IVA and ISR on day 17', () => {
+    const asOf = new Date(2026, 6, 10); // Jul 10 2026
+    const ops = getUpcomingObligations('MX', asOf);
+    assert.equal(ops.length, 2);
+    assert.equal(ops[0]!.code, 'MX_IVA_MENSUAL');
+    assert.equal(ops[1]!.code, 'MX_ISR_PROVISIONAL');
+    assert.equal(ops[0]!.dueDate.getDate(), 17);
+    assert.equal(ops[0]!.daysUntil, 7);
+  });
+
+  it('returns BR DAS Simples on day 20', () => {
+    const asOf = new Date(2026, 6, 15); // Jul 15 2026
+    const ops = getUpcomingObligations('BR', asOf);
+    assert.equal(ops.length, 1);
+    assert.equal(ops[0]!.code, 'BR_DAS_SIMPLES');
+    assert.equal(ops[0]!.dueDate.getDate(), 20);
+    assert.equal(ops[0]!.daysUntil, 5);
+  });
+
+  it('rolls to next month when due day has passed', () => {
+    const asOf = new Date(2026, 6, 18); // Jul 18 — past MX day 17
+    const ops = getUpcomingObligations('MX', asOf);
+    assert.equal(ops[0]!.dueDate.getMonth(), 7); // August
+    assert.equal(ops[0]!.dueDate.getDate(), 17);
   });
 });

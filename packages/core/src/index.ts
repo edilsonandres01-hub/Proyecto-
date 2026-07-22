@@ -24,3 +24,6 @@ export { createOrder, confirmOrder, cancelOrder } from './order.js';
 export { formatMoney } from './money.js';
 
 export { classifyIntent, IntentClassifier } from './intent.js';
+
+export type { TaxObligation } from './taxCalendar.js';
+export { getUpcomingObligations } from './taxCalendar.js';

@@ -1,4 +1,4 @@
-import { classifyIntent, type Intent } from '@pymebot/core';
+import { classifyIntent, getUpcomingObligations, type Intent } from '@pymebot/core';
 
 export type AgentName = 'product' | 'payment' | 'fiscal' | 'support';
 
@@ -30,6 +30,7 @@ export type ToolCall =
   | { name: 'create_draft_order'; productId: string; quantity: number }
   | { name: 'create_payment'; orderId: string; rail: 'spei' | 'codi' | 'pix' | 'cash' }
   | { name: 'issue_invoice'; orderId: string }
+  | { name: 'list_tax_reminders' }
   | { name: 'none' };
 
 export type OrchestratorResult = {
@@ -92,8 +93,12 @@ export function handleTurn(
   const lower = userText.toLowerCase();
   const matchedProduct = findProduct(ctx.products, userText);
 
+  const wantsTaxReminders = /(recordatorio|obligaciones|impuestos|DAS|IVA)/i.test(userText);
+
   // Priority overrides for compound phrases
-  if (/(factur|invoice|nf-?e|timbr|cfdi|nota fiscal)/i.test(lower)) {
+  if (wantsTaxReminders) {
+    intent = 'fiscal';
+  } else if (/(factur|invoice|nf-?e|timbr|cfdi|nota fiscal)/i.test(lower)) {
     intent = 'fiscal';
   } else if (/(cobrar|cobro|pagar|pix|spei|codi)/i.test(lower)) {
     intent = 'payment';
@@ -115,6 +120,27 @@ export function handleTurn(
 
   if (agent === 'fiscal') {
     const disclaimer = lang === 'pt' ? FISCAL_DISCLAIMER_BR : FISCAL_DISCLAIMER_ES;
+    if (wantsTaxReminders) {
+      const obligations = getUpcomingObligations(ctx.country, new Date());
+      const lines = obligations
+        .map((o) => {
+          const dateStr = o.dueDate.toISOString().slice(0, 10);
+          return lang === 'pt'
+            ? `• ${o.title} (${o.code}) — vencimento ${dateStr} (em ${o.daysUntil} dia(s))`
+            : `• ${o.title} (${o.code}) — vence ${dateStr} (en ${o.daysUntil} día(s))`;
+        })
+        .join('\n');
+      return {
+        agent,
+        intent,
+        disclaimer,
+        reply:
+          lang === 'pt'
+            ? `${disclaimer}\nPróximas obrigações fiscais:\n${lines}`
+            : `${disclaimer}\nPróximas obligaciones fiscales:\n${lines}`,
+        tool: { name: 'list_tax_reminders' },
+      };
+    }
     if (extras?.lastOrderId && /(factur|invoice|nf-?e|timbr)/i.test(lower)) {
       return {
         agent,
